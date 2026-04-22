@@ -1,16 +1,51 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
+  darkMode: ["class"],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/features/**/*.{js,ts,jsx,tsx,mdx}", // Dòng này cực kỳ quan trọng để nhận CSS trong features
+    "./src/features/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
+        // --- MÀU CỦA SHADCN (Giữ nguyên để không lỗi UI) ---
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          "1": "hsl(var(--chart-1))",
+          "2": "hsl(var(--chart-2))",
+          "3": "hsl(var(--chart-3))",
+          "4": "hsl(var(--chart-4))",
+          "5": "hsl(var(--chart-5))",
+        },
+
+        // --- BỘ MÀU GỐC CỦA BẠN (CINEMA DIRECTOR'S CUT) ---
         "outline-variant": "#4d4635",
         secondary: "#ffb4aa",
         "on-tertiary": "#082b72",
@@ -39,7 +74,6 @@ const config: Config = {
         "inverse-on-surface": "#313030",
         "on-background": "#e5e2e1",
         "on-primary": "#3d2e00",
-        background: "#131313",
         "surface-container-high": "#2a2a2a",
         "surface-container-lowest": "#0e0e0e",
         outline: "#99907c",
@@ -52,12 +86,17 @@ const config: Config = {
         "surface-container-highest": "#353534",
         surface: "#131313",
         "on-primary-fixed": "#241a00",
-        primary: "#f5c948",
+        primary: "#f5c948", // Màu vàng chủ đạo
         "surface-container": "#201f1f",
         "inverse-primary": "#755b00",
         "on-surface": "#e5e2e1",
         "surface-variant": "#353534",
         "tertiary-fixed": "#dbe1ff",
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
         headline: ["var(--font-manrope)", "sans-serif"],
@@ -66,9 +105,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/forms"),
-    require("@tailwindcss/container-queries"),
-  ],
+  plugins: [require("tailwindcss-animate")],
 };
 export default config;
