@@ -21,6 +21,19 @@ export default function SeatSelectionLayout({ timeId }: Props) {
   const rows = ["A", "B", "G", "H", "L"];
   const cols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+  const handleContinue = () => {
+    // Lưu tạm thông tin ghế và tổng tiền vào Session Storage
+    const bookingData = {
+      timeId: timeId,
+      seats: selectedSeats,
+      seatsTotal: totalPrice,
+    };
+    sessionStorage.setItem("booking_temp_data", JSON.stringify(bookingData));
+
+    // Chuyển hướng sang trang thanh toán
+    router.push("/checkout");
+  };
+
   const handleToggleSeat = (
     seatCode: string,
     type: string,
@@ -247,8 +260,9 @@ export default function SeatSelectionLayout({ timeId }: Props) {
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <button
-              className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary-container text-on-primary px-12 py-4 rounded-full font-label font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+              onClick={handleContinue} // GẮN HÀM VÀO ĐÂY
               disabled={selectedSeats.length === 0}
+              className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary-container text-on-primary px-12 py-4 rounded-full font-label font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
             >
               Thanh toán
             </button>
