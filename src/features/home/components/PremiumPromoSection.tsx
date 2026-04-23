@@ -1,19 +1,20 @@
+// phoenix-0701/cinema/cinema-170fbc91082c4edc5d3ae28f9b7e18bedd6cb9be/src/features/home/components/PremiumPromoSection.tsx
+
 import React from "react";
 
 export default function PremiumPromoSection() {
   return (
     <section className="px-12 py-20 bg-surface-container-low">
-      {/* GRID CHÍNH: Chia 3 cột, độ cao mỗi dòng là 250px */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[250px]">
-        {/* KHỐI BÊN TRÁI (Director's Club): Bắt buộc phải có md:col-span-2 và md:row-span-2 */}
-        <div className="md:col-span-2 md:row-span-2 glass-card rounded-3xl p-10 flex flex-col justify-end relative overflow-hidden group cursor-pointer">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Khối to bên trái chiếm 2 cột */}
+        <div className="md:col-span-2 glass-card rounded-3xl p-10 flex flex-col justify-end relative overflow-hidden group min-h-[520px]">
           <img
             className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000"
             alt="VIP Cinema"
             src="https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
           />
           <div className="relative z-10 space-y-4">
-            <h3 className="text-5xl font-headline font-black text-primary tracking-tighter italic">
+            <h3 className="text-5xl font-headline font-black text-primary tracking-tighter italic uppercase">
               DIRECTOR'S CLUB
             </h3>
             <p className="text-on-surface-variant max-w-md text-lg">
@@ -26,33 +27,34 @@ export default function PremiumPromoSection() {
           </div>
         </div>
 
-        {/* KHỐI BÊN PHẢI SỐ 1 (Member Rewards) */}
-        <div className="bg-primary/10 border border-primary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-primary/20 transition-colors cursor-pointer">
-          <span className="material-symbols-outlined text-primary text-4xl">
-            loyalty
-          </span>
-          <div>
-            <h4 className="text-xl font-headline font-bold mb-2 text-white">
-              Member Rewards
-            </h4>
-            <p className="text-sm text-on-surface-variant">
-              Tích điểm đổi quà, ưu đãi 50% bắp nước mỗi thứ Tư hàng tuần.
-            </p>
+        {/* Cột bên phải chứa 2 khối nhỏ */}
+        <div className="flex flex-col gap-6">
+          <div className="flex-1 bg-primary/10 border border-primary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-primary/20 transition-colors">
+            <span className="material-symbols-outlined text-primary text-4xl">
+              loyalty
+            </span>
+            <div>
+              <h4 className="text-xl font-headline font-bold mb-2 text-white">
+                Member Rewards
+              </h4>
+              <p className="text-sm text-on-surface-variant">
+                Tích điểm đổi quà, ưu đãi 50% bắp nước mỗi thứ Tư.
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* KHỐI BÊN PHẢI SỐ 2 (Quick Booking) */}
-        <div className="bg-secondary/10 border border-secondary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-secondary/20 transition-colors cursor-pointer">
-          <span className="material-symbols-outlined text-secondary text-4xl">
-            confirmation_number
-          </span>
-          <div>
-            <h4 className="text-xl font-headline font-bold mb-2 text-white">
-              Quick Booking
-            </h4>
-            <p className="text-sm text-on-surface-variant">
-              Đặt vé nhanh chóng chỉ với 3 bước chạm trên ứng dụng di động.
-            </p>
+          <div className="flex-1 bg-secondary/10 border border-secondary/20 rounded-3xl p-8 flex flex-col justify-between hover:bg-secondary/20 transition-colors">
+            <span className="material-symbols-outlined text-secondary text-4xl">
+              confirmation_number
+            </span>
+            <div>
+              <h4 className="text-xl font-headline font-bold mb-2 text-white">
+                Quick Booking
+              </h4>
+              <p className="text-sm text-on-surface-variant">
+                Đặt vé nhanh chóng chỉ với 3 bước chạm trên ứng dụng.
+              </p>
+            </div>
           </div>
         </div>
       </div>

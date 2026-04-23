@@ -1,86 +1,43 @@
-@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200");
+/* 1. Import Tailwind v4 */
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 2. Import Plugin Animate chuẩn v4 */
+@plugin "tailwindcss-animate";
+
+/* 3. Định nghĩa Theme trực tiếp trong CSS (Thay thế tailwind.config.ts) */
+@theme {
+  --color-background: #131313;
+  --color-foreground: #e5e2e1;
+
+  --color-primary: #f5c948;
+  --color-on-primary: #3d2e00;
+
+  --color-secondary: #ffb4aa;
+  --color-on-secondary: #690003;
+
+  --color-surface: #131313;
+  --color-surface-container-low: #1c1b1b;
+  --color-surface-container-high: #2a2a2a;
+  --color-on-surface-variant: #d0c5af;
+
+  --font-headline: var(--font-manrope), ui-sans-serif, system-ui;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui;
+}
+
+/* 4. Định nghĩa các Utility tùy chỉnh */
+@utility glass-card {
+  background: rgba(28, 27, 27, 0.7);
+  backdrop-filter: blur(20px);
+}
 
 @layer base {
-  :root {
-    /* ÉP SHADCN DÙNG BỘ MÀU CINEMA (DARK MODE) */
-    --background: 0 0% 7%; /* #131313 - Nền chính */
-    --foreground: 0 0% 90%; /* #e5e2e1 - Chữ chính */
-
-    --card: 0 0% 11%; /* #1c1b1b */
-    --card-foreground: 0 0% 90%;
-
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 90%;
-
-    --primary: 45 90% 62%; /* #f5c948 - Màu Vàng chủ đạo */
-    --primary-foreground: 45 100% 12%; /* #3d2e00 - Chữ trên nền vàng */
-
-    --secondary: 4 100% 82%; /* #ffb4aa - Đỏ nhạt */
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 60%;
-
-    --accent: 45 90% 62%;
-    --accent-foreground: 45 100% 12%;
-
-    --destructive: 0 100% 50%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 45 90% 62%;
-    --radius: 0.5rem;
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+    background-color: #131313; /* Ép nền tối */
   }
 }
 
-@layer utilities {
-  .glass-card {
-    background: rgba(28, 27, 27, 0.7);
-    backdrop-filter: blur(20px);
-  }
-}
-
-/* KHÓA CỨNG MÀU NỀN CỦA BODY */
-body {
-  background-color: #131313 !important;
-  color: #e5e2e1 !important;
-  overflow-x: hidden;
-}
-
-/* Scrollbar Style */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #131313;
-}
-::-webkit-scrollbar-thumb {
-  background: #353534;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #f5c948;
-}
-
-@layer utilities {
-  .glass-card {
-    background: rgba(28, 27, 27, 0.7);
-    backdrop-filter: blur(20px);
-  }
-}
-
-body {
-  background-color: #131313;
-  color: #e5e2e1;
-  overflow-x: hidden;
-}
-
-/* Custom Scrollbar giống mẫu HTML */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }

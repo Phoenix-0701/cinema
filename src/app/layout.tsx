@@ -1,3 +1,4 @@
+import "material-symbols/outlined.css";
 import type { Metadata } from "next";
 import { Manrope, Inter } from "next/font/google";
 import "./globals.css";
@@ -29,17 +30,7 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning giúp sửa cái lỗi đỏ lòm ở bước trước do Extension trình duyệt
     <html lang="vi" className="dark" suppressHydrationWarning>
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          rel="stylesheet"
-        />
-        <style>{`
-          .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-          }
-        `}</style>
-      </head>
+      <head></head>
       <body
         className={`${manrope.variable} ${inter.variable} font-body selection:bg-primary selection:text-on-primary bg-background text-on-background`}
       >
