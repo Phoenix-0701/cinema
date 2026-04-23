@@ -12,4 +12,9 @@ export const checkoutService = {
   createOrder: (payload: OrderPayload) => {
     return api.post<any, ApiResponse<any>>("/orders", payload);
   },
+
+  getOrderHistory: () => {
+    // Gọi đến endpoint lấy lịch sử order của user đang login
+    return api.get<any, ApiResponse<any[]>>("/orders/history");
+  },
 };

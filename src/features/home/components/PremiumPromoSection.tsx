@@ -1,5 +1,3 @@
-// phoenix-0701/cinema/cinema-170fbc91082c4edc5d3ae28f9b7e18bedd6cb9be/src/features/home/components/PremiumPromoSection.tsx
-
 import React from "react";
 
 export default function PremiumPromoSection() {
@@ -11,7 +9,7 @@ export default function PremiumPromoSection() {
           <img
             className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:scale-105 transition-transform duration-1000"
             alt="VIP Cinema"
-            src="https://i.ibb.co/3pQG6qX/vip-cinema.jpg"
+            src="https://www.shutterstock.com/image-photo/empty-cinema-auditorium-rows-red-600nw-2713917599.jpg"
           />
           <div className="relative z-10 space-y-4">
             <h3 className="text-5xl font-headline font-black text-primary tracking-tighter italic uppercase">

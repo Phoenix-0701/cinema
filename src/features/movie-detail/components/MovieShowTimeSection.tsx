@@ -20,7 +20,6 @@ export default function MovieShowtimesSection({ movieId }: Props) {
         const res = await movieService.getMovieShowtimes(movieId);
         if (res.success && res.data.length > 0) {
           setShowtimes(res.data);
-          // Mặc định chọn ngày đầu tiên có suất chiếu
           setSelectedDate(res.data[0].day);
         }
       } catch (error) {
@@ -30,13 +29,10 @@ export default function MovieShowtimesSection({ movieId }: Props) {
     fetchShowtimes();
   }, [movieId]);
 
-  // Lọc ra danh sách các ngày duy nhất (VD: 2024-05-15)
   const uniqueDates = Array.from(new Set(showtimes.map((st) => st.day))).sort();
 
-  // Lọc các suất chiếu thuộc về ngày đang được chọn
   const showtimesForDate = showtimes.filter((st) => st.day === selectedDate);
 
-  // Nhóm các suất chiếu theo Format (2D, 3D, IMAX...)
   const formatGroups = showtimesForDate.reduce(
     (acc, curr) => {
       const formatName = curr.format?.fName || "Tiêu chuẩn";
@@ -70,7 +66,6 @@ export default function MovieShowtimesSection({ movieId }: Props) {
           ) : (
             uniqueDates.map((date) => {
               const isSelected = selectedDate === date;
-              // Parse date để hiển thị đẹp hơn nếu cần (Ở đây hiển thị text thô tạm)
               const [year, month, day] = date.split("-");
 
               return (
@@ -124,15 +119,13 @@ export default function MovieShowtimesSection({ movieId }: Props) {
 
               <div className="grid grid-cols-3 gap-3">
                 {times.map((st) => {
-                  // Hiển thị giờ:phút (VD: 19:30)
                   const timeString = st.startTime.substring(0, 5);
-                  const isPast = st.status === "COMPLETED"; // Giả định log logic khóa nút
+                  const isPast = st.status === "COMPLETED";
 
                   return (
                     <button
                       key={st.timeId}
                       disabled={isPast}
-                      // THÊM SỰ KIỆN CLICK CHUYỂN TRANG VÀO ĐÂY:
                       onClick={() =>
                         router.push(`/booking/showtime/${st.timeId}`)
                       }

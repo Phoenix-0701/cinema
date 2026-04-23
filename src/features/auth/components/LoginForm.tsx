@@ -21,12 +21,10 @@ export default function LoginForm() {
     try {
       const response = await authService.login({ email, password });
 
-      // Giả định API trả về response.data.accessToken
       if (response && response.data && response.data.accessToken) {
         setTokens(response.data.accessToken, response.data.refreshToken);
-        // Đăng nhập thành công, quay về trang chủ hoặc trang trước đó
         router.push("/");
-        router.refresh(); // Load lại Header để cập nhật trạng thái
+        router.refresh();
       } else {
         setError("Email hoặc mật khẩu không chính xác.");
       }
