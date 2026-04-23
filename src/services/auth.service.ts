@@ -16,7 +16,6 @@ export const authService = {
     return api.post<any, ApiResponse<AuthResponse>>("/auth/register", data);
   },
 
-  // THÊM HÀM NÀY ĐỂ LẤY THÔNG TIN USER TỪ JWT TOKEN
   getMe: () => {
     return api.get<any, ApiResponse<User>>("/auth/me");
   },

@@ -25,7 +25,6 @@ export default function Header() {
         if (response.success && response.data) {
           setUser(response.data);
         } else {
-          // Nếu token hết hạn hoặc không hợp lệ -> Xóa token
           removeTokens();
         }
       } catch (error) {
@@ -38,9 +37,9 @@ export default function Header() {
   }, []);
 
   const handleLogout = () => {
-    removeTokens(); // Xóa Token khỏi LocalStorage
-    setUser(null); // Reset State
-    router.push("/login"); // Đẩy về trang đăng nhập
+    removeTokens();
+    setUser(null);
+    router.push("/login");
   };
 
   return (
@@ -104,10 +103,8 @@ export default function Header() {
         {/* LOGIC HIỂN THỊ USER / NÚT ĐĂNG NHẬP */}
         <div className="min-w-[120px] flex justify-end">
           {!isMounted ? (
-            // Lúc đang load (chưa biết có token hay không) -> Hiện khung xám nhấp nháy tránh giật layout
             <div className="w-28 h-9 bg-surface-container-high rounded-full animate-pulse"></div>
           ) : user ? (
-            // NẾU ĐÃ ĐĂNG NHẬP: Hiển thị Avatar + Dropdown Menu
             <div className="relative group">
               <button className="flex items-center gap-2 bg-surface-container-high px-4 py-2 rounded-full border border-white/5 hover:border-primary/30 transition-colors">
                 <span className="material-symbols-outlined text-primary text-xl">
@@ -154,7 +151,6 @@ export default function Header() {
               </div>
             </div>
           ) : (
-            // NẾU CHƯA ĐĂNG NHẬP: Hiện nút Đăng nhập
             <Link
               href="/login"
               className="bg-primary text-on-primary px-6 py-2 rounded-full font-label font-bold text-sm tracking-wide hover:opacity-80 transition-all duration-300 scale-95 active:scale-90 flex items-center gap-2"
