@@ -5,18 +5,20 @@ import { useRouter } from "next/navigation";
 import { checkoutService } from "@/src/services/checkout.service";
 import { ComboItem } from "@/src/types/checkout.type";
 import { Seat } from "@/src/types/booking.type";
+import Link from "next/link";
 
 export default function CheckoutLayout() {
   const router = useRouter();
 
-  // States lấy dữ liệu từ trang trước
+  // --- 1. STATES ---
   const [bookingData, setBookingData] = useState<{
     timeId: string;
     seats: Seat[];
     seatsTotal: number;
+    movieName?: string;
+    showtimeInfo?: string;
   } | null>(null);
 
-  // States cho Combo & Thanh toán
   const [combos, setCombos] = useState<ComboItem[]>([
     {
       id: 1,
@@ -35,34 +37,35 @@ export default function CheckoutLayout() {
       imageUrl: "https://i.ibb.co/3pQG6qX/vip-cinema.jpg",
     },
   ]);
+
   const [paymentMethod, setPaymentMethod] = useState("MOMO");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
+  // --- 2. EFFECTS ---
   useEffect(() => {
-    // Lấy dữ liệu ghế đã chọn từ session storage
+    // Lấy dữ liệu từ bước chọn ghế
     const data = sessionStorage.getItem("booking_temp_data");
     if (data) {
       setBookingData(JSON.parse(data));
     } else {
-      // Nếu không có dữ liệu (user vào thẳng link), đẩy về trang chủ
+      // Nếu không có dữ liệu, quay lại trang chủ
       router.push("/");
     }
   }, [router]);
 
-  // Hàm xử lý tăng/giảm combo
+  // --- 3. LOGIC HANDLERS ---
   const updateComboQty = (id: number, delta: number) => {
     setCombos((prev) =>
       prev.map((c) => {
         if (c.id === id) {
-          const newQty = Math.max(0, c.quantity + delta);
-          return { ...c, quantity: newQty };
+          return { ...c, quantity: Math.max(0, c.quantity + delta) };
         }
         return c;
       }),
     );
   };
 
-  // Tính tổng tiền
   const combosTotal = combos.reduce((sum, c) => sum + c.price * c.quantity, 0);
   const totalAmount = (bookingData?.seatsTotal || 0) + combosTotal;
 
@@ -71,7 +74,6 @@ export default function CheckoutLayout() {
     setIsProcessing(true);
 
     try {
-      // Payload gửi xuống BE
       const payload = {
         showtimeId: Number(bookingData.timeId),
         seatIds: bookingData.seats.map((s) => s.seatId),
@@ -82,38 +84,65 @@ export default function CheckoutLayout() {
         totalAmount: totalAmount,
       };
 
-      // GỌI API THỰC TẾ (Sẽ hoạt động khi BE chạy)
-      // await checkoutService.createOrder(payload);
+      // Gọi API thực tế tới Spring Boot
+      await checkoutService.createOrder(payload);
 
-      // Tạm thời mô phỏng delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      alert("🎉 Thanh toán thành công! Mã vé của bạn đã được gửi về email.");
-      sessionStorage.removeItem("booking_temp_data"); // Xóa cache
-      router.push("/"); // Đẩy về trang chủ hoặc trang lịch sử giao dịch
+      // Xóa dữ liệu tạm sau khi đặt vé thành công
+      sessionStorage.removeItem("booking_temp_data");
+      setIsSuccess(true);
     } catch (error) {
-      alert("Thanh toán thất bại, vui lòng thử lại.");
+      console.error("Lỗi thanh toán:", error);
+      alert("Đã có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  if (!bookingData)
+  if (!bookingData) {
     return (
-      <div className="min-h-screen bg-background pt-32 text-center text-white">
-        Đang tải dữ liệu...
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
+  }
 
   return (
-    <main className="pt-24 pb-20 px-4 md:px-8 lg:px-12 max-w-7xl mx-auto min-h-screen bg-background text-on-surface">
-      {/* Header Progress */}
+    <main className="pt-24 pb-20 px-4 md:px-8 lg:px-12 max-w-7xl mx-auto min-h-screen bg-background text-on-surface relative">
+      {/* MODAL THÀNH CÔNG */}
+      {isSuccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md px-4">
+          <div className="bg-surface-container-low border border-white/10 p-10 rounded-3xl max-w-md w-full text-center shadow-2xl animate-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-5xl">
+                check_circle
+              </span>
+            </div>
+            <h2 className="text-2xl font-headline font-black text-white mb-2 uppercase italic tracking-tighter">
+              Thanh Toán Thành Công!
+            </h2>
+            <p className="text-on-surface-variant text-sm mb-8">
+              Cảm ơn bạn đã tin tưởng Director’s Cut. Mã vé điện tử đã được kích
+              hoạt trong hệ thống.
+            </p>
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/"
+                className="w-full bg-primary text-on-primary py-4 rounded-full font-bold text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+              >
+                Quay về trang chủ
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HEADER PROGRESS */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <div>
           <h1 className="font-headline text-3xl font-extrabold tracking-tight mb-2 text-white">
             BẮP NƯỚC & THANH TOÁN
           </h1>
-          <div className="flex items-center gap-4 text-sm text-on-surface-variant">
+          <div className="flex items-center gap-4 text-sm text-on-surface-variant uppercase font-bold tracking-widest">
             <span className="flex items-center gap-1 text-primary">
               <span className="material-symbols-outlined text-sm">
                 check_circle
@@ -133,16 +162,35 @@ export default function CheckoutLayout() {
             </span>
           </div>
         </div>
+
+        <div className="bg-surface-container-high px-6 py-3 rounded-xl border border-primary/20 flex items-center gap-4 self-start">
+          <span
+            className="material-symbols-outlined text-primary"
+            style={{ fontVariationSettings: "'FILL' 1" }}
+          >
+            timer
+          </span>
+          <div className="flex flex-col">
+            <span className="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">
+              Thời gian giữ vé
+            </span>
+            <span className="font-headline text-2xl font-black text-primary leading-none">
+              05:00
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* LEFT COLUMN */}
+        {/* CỘT TRÁI: COMBO & THANH TOÁN */}
         <div className="lg:col-span-8 space-y-10">
-          {/* Combo Section */}
+          {/* Section: Combo */}
           <section>
-            <h2 className="font-headline text-xl font-bold tracking-widest uppercase mb-6 text-white">
-              COMBO ƯU ĐÃI
-            </h2>
+            <div className="flex justify-between items-end mb-6">
+              <h2 className="font-headline text-xl font-bold tracking-widest uppercase text-white">
+                Combo Ưu Đãi
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {combos.map((combo) => (
                 <div
@@ -197,82 +245,79 @@ export default function CheckoutLayout() {
             </div>
           </section>
 
-          {/* Payment Methods */}
+          {/* Section: Phương thức thanh toán */}
           <section>
             <h2 className="font-headline text-xl font-bold tracking-widest uppercase mb-6 text-white">
-              PHƯƠNG THỨC THANH TOÁN
+              Phương thức thanh toán
             </h2>
             <div className="space-y-3">
-              {/* Momo */}
-              <label
-                className={`flex items-center justify-between p-4 bg-surface-container-low rounded-xl cursor-pointer border-2 transition-all ${paymentMethod === "MOMO" ? "border-primary bg-surface-container-high" : "border-transparent hover:border-primary/30"}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-[#a50064] rounded-lg flex items-center justify-center text-white font-bold text-xs">
-                    MoMo
-                  </div>
-                  <span className="font-semibold text-white">
-                    Ví điện tử MoMo
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="MOMO"
-                  checked={paymentMethod === "MOMO"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-5 h-5 text-primary bg-surface-container-highest border-none focus:ring-offset-background"
-                />
-              </label>
-
-              {/* VNPay */}
-              <label
-                className={`flex items-center justify-between p-4 bg-surface-container-low rounded-xl cursor-pointer border-2 transition-all ${paymentMethod === "VNPAY" ? "border-primary bg-surface-container-high" : "border-transparent hover:border-primary/30"}`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-white rounded-lg p-1 flex items-center justify-center overflow-hidden">
-                    <span className="text-blue-600 font-black text-xs">
-                      VNPAY
+              {[
+                {
+                  id: "MOMO",
+                  name: "Ví điện tử MoMo",
+                  brand: "MOMO",
+                  color: "bg-[#a50064]",
+                },
+                {
+                  id: "VNPAY",
+                  name: "VNPAY - Quét mã QR",
+                  brand: "VNPAY",
+                  color: "bg-white text-blue-600",
+                },
+              ].map((method) => (
+                <label
+                  key={method.id}
+                  className={`flex items-center justify-between p-4 bg-surface-container-low rounded-xl cursor-pointer border-2 transition-all ${
+                    paymentMethod === method.id
+                      ? "border-primary bg-surface-container-high"
+                      : "border-transparent hover:border-primary/30"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`w-12 h-10 ${method.color} rounded-lg flex items-center justify-center font-black text-[10px] uppercase shadow-inner`}
+                    >
+                      {method.brand}
+                    </div>
+                    <span className="font-semibold text-white">
+                      {method.name}
                     </span>
                   </div>
-                  <span className="font-semibold text-white">
-                    VNPAY - Quét mã QR
-                  </span>
-                </div>
-                <input
-                  type="radio"
-                  name="payment"
-                  value="VNPAY"
-                  checked={paymentMethod === "VNPAY"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-5 h-5 text-primary bg-surface-container-highest border-none focus:ring-offset-background"
-                />
-              </label>
+                  <input
+                    type="radio"
+                    name="payment"
+                    value={method.id}
+                    checked={paymentMethod === method.id}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-5 h-5 text-primary bg-surface-container-highest border-none focus:ring-offset-background"
+                  />
+                </label>
+              ))}
             </div>
           </section>
         </div>
 
-        {/* RIGHT COLUMN: TÓM TẮT ĐƠN HÀNG */}
+        {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG */}
         <aside className="lg:col-span-4">
           <div className="sticky top-28 glass-card rounded-2xl p-6 shadow-2xl border border-white/5">
-            <h2 className="font-headline text-2xl font-black text-center mb-1 text-white uppercase">
+            <h2 className="font-headline text-2xl font-black text-center mb-1 text-white uppercase italic tracking-tighter">
               TÓM TẮT ĐƠN HÀNG
             </h2>
-            <p className="text-xs text-primary font-bold text-center uppercase tracking-widest mb-6">
-              DIRECTOR'S CUT THEATER
+            <p className="text-xs text-primary font-bold text-center uppercase tracking-[0.3em] mb-6">
+              Director’s Cut
             </p>
 
-            <div className="space-y-4 text-sm mb-8 border-b border-surface-variant pb-8 text-on-surface-variant">
+            <div className="space-y-4 text-sm mb-8 border-b border-white/10 pb-8 text-on-surface-variant">
               <div className="flex justify-between">
-                <span>Ghế chọn:</span>{" "}
-                <span className="font-semibold text-primary">
+                <span>Ghế đã chọn:</span>
+                <span className="font-bold text-primary">
                   {bookingData.seats
                     .map((s) => s.rowName + s.number)
                     .join(", ")}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Tiền ghế:</span>{" "}
+                <span>Tiền ghế:</span>
                 <span className="font-semibold text-white">
                   {bookingData.seatsTotal.toLocaleString("vi-VN")}đ
                 </span>
@@ -281,7 +326,10 @@ export default function CheckoutLayout() {
               {combos
                 .filter((c) => c.quantity > 0)
                 .map((c) => (
-                  <div key={c.id} className="flex justify-between">
+                  <div
+                    key={c.id}
+                    className="flex justify-between animate-in fade-in slide-in-from-right-2"
+                  >
                     <span className="w-2/3 truncate">
                       {c.quantity}x {c.name}
                     </span>
@@ -292,12 +340,12 @@ export default function CheckoutLayout() {
                 ))}
             </div>
 
-            <div className="space-y-2 mb-8 text-white">
+            <div className="space-y-2 mb-8">
               <div className="flex justify-between items-end pt-4">
-                <span className="font-bold text-lg uppercase tracking-tighter">
-                  Tổng cộng
+                <span className="font-bold text-lg uppercase tracking-tighter text-white">
+                  Tổng thanh toán
                 </span>
-                <span className="font-headline text-3xl font-black text-primary">
+                <span className="font-headline text-3xl font-black text-primary animate-in fade-in duration-500">
                   {totalAmount.toLocaleString("vi-VN")}đ
                 </span>
               </div>
@@ -306,13 +354,21 @@ export default function CheckoutLayout() {
             <button
               onClick={handlePayment}
               disabled={isProcessing}
-              className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-full font-headline font-black text-lg tracking-widest uppercase shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary py-4 rounded-full font-headline font-black text-lg tracking-widest uppercase shadow-xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isProcessing ? "ĐANG XỬ LÝ..." : "THANH TOÁN NGAY"}
+              {isProcessing ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin"></div>
+                  ĐANG XỬ LÝ...
+                </>
+              ) : (
+                "THANH TOÁN NGAY"
+              )}
             </button>
-            <p className="text-[10px] text-center text-on-surface-variant mt-4 leading-relaxed px-4">
+
+            <p className="text-[10px] text-center text-on-surface-variant mt-6 leading-relaxed px-4 italic">
               Bằng việc nhấn Thanh toán, bạn đồng ý với các Điều khoản & Chính
-              sách của Cinema.
+              sách bảo mật của Cinema Director’s Cut.
             </p>
           </div>
         </aside>

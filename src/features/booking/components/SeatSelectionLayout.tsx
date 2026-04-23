@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { bookingService } from "@/src/services/booking.service";
 import { Seat, ShowtimeDetails } from "@/src/types/booking.type";
 
 interface Props {
@@ -11,39 +12,43 @@ interface Props {
 export default function SeatSelectionLayout({ timeId }: Props) {
   const router = useRouter();
 
-  // States giả định cho UI (Sẽ thay bằng data thật từ API)
+  // States lưu dữ liệu từ API
   const [showtime, setShowtime] = useState<ShowtimeDetails | null>(null);
+  const [seats, setSeats] = useState<Seat[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // State lưu ghế user đang chọn
   const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
 
-  // TODO: Gọi API bookingService.getSeatsByShowtime(timeId) ở đây
+  // GỌI API KHI COMPONENT RENDER
+  useEffect(() => {
+    const fetchBookingData = async () => {
+      try {
+        setLoading(true);
+        // Gọi song song 2 API để tối ưu tốc độ
+        const [showtimeRes, seatsRes] = await Promise.all([
+          bookingService.getShowtimeDetails(timeId),
+          bookingService.getSeatsByShowtime(timeId),
+        ]);
 
-  // MOCK DATA để test giao diện
-  const rows = ["A", "B", "G", "H", "L"];
-  const cols = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-  const handleContinue = () => {
-    // Lưu tạm thông tin ghế và tổng tiền vào Session Storage
-    const bookingData = {
-      timeId: timeId,
-      seats: selectedSeats,
-      seatsTotal: totalPrice,
+        if (showtimeRes.success) setShowtime(showtimeRes.data);
+        if (seatsRes.success) setSeats(seatsRes.data);
+      } catch (error) {
+        console.error("Lỗi tải dữ liệu phòng chiếu:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    sessionStorage.setItem("booking_temp_data", JSON.stringify(bookingData));
 
-    // Chuyển hướng sang trang thanh toán
-    router.push("/checkout");
-  };
+    fetchBookingData();
+  }, [timeId]);
 
-  const handleToggleSeat = (
-    seatCode: string,
-    type: string,
-    price: number,
-    isBooked: boolean,
-  ) => {
-    if (isBooked) return;
+  // Hàm xử lý khi bấm vào 1 ghế
+  const handleToggleSeat = (seat: Seat) => {
+    if (seat.isBooked) return; // Không cho click ghế đã bán
 
     const existingIndex = selectedSeats.findIndex(
-      (s) => s.rowName + s.number === seatCode,
+      (s) => s.seatId === seat.seatId,
     );
     if (existingIndex >= 0) {
       // Bỏ chọn
@@ -52,43 +57,66 @@ export default function SeatSelectionLayout({ timeId }: Props) {
       setSelectedSeats(newSeats);
     } else {
       // Thêm mới
-      setSelectedSeats([
-        ...selectedSeats,
-        {
-          seatId: Math.random(),
-          rowName: seatCode.charAt(0),
-          number: seatCode.slice(1),
-          type: type as any,
-          isBooked: false,
-          price,
-        },
-      ]);
+      setSelectedSeats([...selectedSeats, seat]);
     }
+  };
+
+  // Hàm chuyển sang trang thanh toán
+  const handleContinue = () => {
+    const bookingData = {
+      timeId: timeId,
+      seats: selectedSeats,
+      seatsTotal: totalPrice,
+    };
+    sessionStorage.setItem("booking_temp_data", JSON.stringify(bookingData));
+    router.push("/checkout");
   };
 
   const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
 
+  // Thuật toán: Nhóm ghế theo Hàng (RowName) để render động
+  const groupedSeats = seats.reduce(
+    (acc, seat) => {
+      if (!acc[seat.rowName]) acc[seat.rowName] = [];
+      acc[seat.rowName].push(seat);
+      return acc;
+    },
+    {} as Record<string, Seat[]>,
+  );
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center text-primary">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-bold tracking-widest uppercase text-sm">
+          Đang tải sơ đồ rạp...
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background relative pb-32">
-      {/* Top Nav */}
-      <nav className="fixed top-0 w-full z-50 bg-[#131313]/70 backdrop-blur-xl shadow-2xl shadow-black/20 flex justify-between items-center px-8 py-4">
+      {/* Top Nav (Data động từ showtime API) */}
+      <nav className="fixed top-0 w-full z-50 bg-[#131313]/70 backdrop-blur-xl shadow-2xl shadow-black/20 flex justify-between items-center px-4 md:px-8 py-4">
         <div className="flex items-center gap-6">
           <button
             onClick={() => router.back()}
             className="text-on-surface hover:text-primary transition-colors flex items-center gap-2"
           >
             <span className="material-symbols-outlined">arrow_back</span>
-            <span className="font-label uppercase tracking-widest text-xs font-bold">
+            <span className="hidden md:inline font-label uppercase tracking-widest text-xs font-bold">
               Quay lại
             </span>
           </button>
         </div>
         <div className="flex flex-col items-center text-center">
-          <h2 className="font-headline font-bold text-lg tracking-wide uppercase text-on-surface">
-            KIẾN TẠO THẾ GIỚI
+          <h2 className="font-headline font-bold text-base md:text-lg tracking-wide uppercase text-on-surface">
+            {showtime?.movieName || "Đang cập nhật..."}
           </h2>
-          <p className="text-[10px] text-on-surface-variant tracking-[0.2em] font-medium">
-            DIRECTOR'S CUT QUẬN 1 • RẠP 01 • 19:30, Hôm nay
+          <p className="text-[10px] text-on-surface-variant tracking-[0.2em] font-medium uppercase mt-1">
+            {showtime?.branchName} • {showtime?.roomName} •{" "}
+            {showtime?.startTime?.substring(0, 5)}, {showtime?.date}
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -97,7 +125,7 @@ export default function SeatSelectionLayout({ timeId }: Props) {
               Thời gian
             </span>
             <span className="text-primary font-headline font-extrabold text-xl">
-              09:54
+              10:00
             </span>
           </div>
           <span className="material-symbols-outlined text-primary scale-125">
@@ -107,9 +135,9 @@ export default function SeatSelectionLayout({ timeId }: Props) {
       </nav>
 
       {/* Main Content */}
-      <main className="pt-32 px-4 md:px-8 max-w-7xl mx-auto">
+      <main className="pt-32 px-4 md:px-8 max-w-7xl mx-auto overflow-hidden">
         {/* Màn hình */}
-        <div className="mb-20 text-center flex flex-col items-center">
+        <div className="mb-16 text-center flex flex-col items-center">
           <div className="w-full max-w-3xl" style={{ perspective: "500px" }}>
             <div className="h-2 w-full bg-primary/40 rounded-full shadow-[0_0_40px_rgba(245,201,72,0.3)] transform rotateX(-45deg)"></div>
             <div className="h-24 w-full opacity-40 bg-gradient-to-b from-primary/20 to-transparent"></div>
@@ -119,127 +147,157 @@ export default function SeatSelectionLayout({ timeId }: Props) {
           </div>
         </div>
 
-        {/* Lưới ghế */}
-        <div className="flex flex-col items-center overflow-x-auto pb-8">
-          <div
-            className="grid gap-2 min-w-[700px]"
-            style={{ gridTemplateColumns: "repeat(14, minmax(0, 1fr))" }}
-          >
-            {rows.map((row) => (
-              <React.Fragment key={row}>
-                <div className="flex items-center justify-center font-label text-xs text-on-surface-variant opacity-40">
-                  {row}
+        {/* Lưới ghế (Render động từ groupedSeats) */}
+        <div className="flex flex-col items-center overflow-x-auto pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+          <div className="min-w-max flex flex-col gap-2">
+            {Object.keys(groupedSeats)
+              .sort()
+              .map((row) => (
+                <div
+                  key={row}
+                  className="flex items-center justify-center gap-2"
+                >
+                  {/* Tên hàng bên trái */}
+                  <div className="w-6 flex items-center justify-center font-label text-xs text-on-surface-variant opacity-40">
+                    {row}
+                  </div>
+
+                  {/* Danh sách ghế trong hàng */}
+                  <div className="flex gap-2">
+                    {groupedSeats[row]
+                      .sort((a, b) => parseInt(a.number) - parseInt(b.number))
+                      .map((seat, index) => {
+                        const isSelected = selectedSeats.some(
+                          (s) => s.seatId === seat.seatId,
+                        );
+                        const isVIP = seat.type === "VIP";
+                        const isSweetbox = seat.type === "SWEETBOX";
+
+                        // Tính toán tạo khoảng trống lối đi (Thường ở giữa rạp)
+                        // Giả sử có 10 ghế 1 hàng, ta tách ở sau ghế số 2 và sau ghế số 8 để có 2 lối đi
+                        const isAisle =
+                          index === 2 || index === groupedSeats[row].length - 3;
+
+                        return (
+                          <React.Fragment key={seat.seatId}>
+                            <div
+                              onClick={() => handleToggleSeat(seat)}
+                              className={`
+                            flex items-center justify-center cursor-pointer transition-all
+                            ${isSweetbox ? "w-20 h-8 rounded-md" : "w-8 h-8 rounded-sm text-[8px]"}
+                            ${
+                              seat.isBooked
+                                ? "bg-surface opacity-20 cursor-not-allowed text-transparent"
+                                : isSelected
+                                  ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
+                                  : isSweetbox
+                                    ? "bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40 text-secondary"
+                                    : isVIP
+                                      ? "border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
+                                      : "bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
+                            }
+                          `}
+                            >
+                              {isSweetbox ? (
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className={`text-[8px] font-bold ${isSelected ? "text-on-primary" : "text-secondary/60"}`}
+                                  >
+                                    {seat.rowName}
+                                    {seat.number}
+                                  </span>
+                                  <span
+                                    className="material-symbols-outlined text-sm"
+                                    style={{
+                                      fontVariationSettings: "'FILL' 1",
+                                    }}
+                                  >
+                                    favorite
+                                  </span>
+                                </div>
+                              ) : (
+                                <>
+                                  {seat.rowName}
+                                  {seat.number}
+                                </>
+                              )}
+                            </div>
+                            {/* Thêm khoảng trống lối đi nếu thoả điều kiện */}
+                            {isAisle && <div className="w-4"></div>}
+                          </React.Fragment>
+                        );
+                      })}
+                  </div>
+
+                  {/* Tên hàng bên phải */}
+                  <div className="w-6 flex items-center justify-center font-label text-xs text-on-surface-variant opacity-40">
+                    {row}
+                  </div>
                 </div>
+              ))}
+          </div>
+        </div>
 
-                {cols.map((col) => {
-                  const seatCode = `${row}${col}`;
-                  const isVIP = row === "G" || row === "H";
-                  const isSweetbox = row === "L";
-                  const isBooked = seatCode === "B2" || seatCode === "B3"; // Mock ghế đã bán
-                  const isSelected = selectedSeats.some(
-                    (s) => s.rowName + s.number === seatCode,
-                  );
-                  const price = isSweetbox ? 150000 : isVIP ? 120000 : 85000;
-
-                  // Spacer tạo lối đi (sau cột 2 và cột 8)
-                  const spacer =
-                    col === 2 || col === 8 ? (
-                      <div key={`space-${col}`} className="w-4"></div>
-                    ) : null;
-
-                  if (isSweetbox) {
-                    // Sweetbox render logic (chiếm 2 cột)
-                    if (col % 2 === 0) return spacer; // Chỉ render cột lẻ cho sweetbox
-                    return (
-                      <React.Fragment key={seatCode}>
-                        <div
-                          onClick={() =>
-                            handleToggleSeat(
-                              seatCode,
-                              "SWEETBOX",
-                              price,
-                              isBooked,
-                            )
-                          }
-                          className={`col-span-2 w-full h-8 rounded-sm flex items-center justify-center cursor-pointer transition-all ${
-                            isSelected
-                              ? "bg-primary text-on-primary shadow-[0_0_15px_rgba(245,201,72,0.5)]"
-                              : "bg-secondary-container/20 border border-secondary/40 hover:bg-secondary-container/40"
-                          }`}
-                          style={{ gridColumn: "span 2 / span 2" }}
-                        >
-                          <span
-                            className={`text-[8px] font-bold mr-1 ${isSelected ? "text-on-primary" : "text-secondary/40"}`}
-                          >
-                            {seatCode}
-                          </span>
-                          <span
-                            className={`material-symbols-outlined text-sm ${isSelected ? "text-on-primary" : "text-secondary"}`}
-                            style={{ fontVariationSettings: "'FILL' 1" }}
-                          >
-                            favorite
-                          </span>
-                        </div>
-                        {spacer}
-                      </React.Fragment>
-                    );
-                  }
-
-                  return (
-                    <React.Fragment key={seatCode}>
-                      <div
-                        onClick={() =>
-                          handleToggleSeat(
-                            seatCode,
-                            isVIP ? "VIP" : "STANDARD",
-                            price,
-                            isBooked,
-                          )
-                        }
-                        className={`w-8 h-8 rounded-sm flex items-center justify-center text-[8px] transition-all cursor-pointer ${
-                          isBooked
-                            ? "bg-surface opacity-20 cursor-not-allowed"
-                            : isSelected
-                              ? "bg-primary text-on-primary font-bold shadow-[0_0_15px_rgba(245,201,72,0.5)]"
-                              : isVIP
-                                ? "border border-primary/40 bg-surface-container-highest text-primary/60 hover:bg-primary/20"
-                                : "bg-surface-container-highest text-on-surface-variant/60 hover:bg-surface-container-high"
-                        }`}
-                      >
-                        {seatCode}
-                      </div>
-                      {spacer}
-                    </React.Fragment>
-                  );
-                })}
-
-                <div className="flex items-center justify-center font-label text-xs text-on-surface-variant opacity-40">
-                  {row}
-                </div>
-              </React.Fragment>
-            ))}
+        {/* Chú thích */}
+        <div className="mt-12 flex flex-wrap justify-center gap-x-8 gap-y-4 bg-surface-container-low p-6 rounded-xl border border-white/5 max-w-3xl mx-auto">
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm bg-surface-container-highest"></div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              Thường
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm border border-primary/40 bg-surface-container-highest"></div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              VIP
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm bg-secondary-container/20 border border-secondary/40 flex items-center justify-center">
+              <span
+                className="material-symbols-outlined text-secondary text-[10px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                favorite
+              </span>
+            </div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              Sweetbox
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm bg-primary shadow-[0_0_10px_rgba(245,201,72,0.4)]"></div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              Đang chọn
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="w-5 h-5 rounded-sm bg-surface opacity-20"></div>
+            <span className="text-[10px] uppercase tracking-wider text-on-surface-variant">
+              Đã bán
+            </span>
           </div>
         </div>
       </main>
 
-      {/* Bottom Bar Tích hợp */}
+      {/* Bottom Bar */}
       <div className="fixed bottom-0 w-full bg-surface-container-low/90 backdrop-blur-2xl border-t border-white/5 z-40">
-        <div className="max-w-7xl mx-auto px-8 py-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-8 w-full md:w-auto">
-            <div className="flex flex-col">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 md:py-6 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4 md:gap-8">
+            <div className="flex flex-col w-1/2 md:w-auto">
               <span className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">
                 Ghế đã chọn
               </span>
-              <div className="flex gap-2 mt-1">
+              <div className="flex flex-wrap gap-1 mt-1">
                 {selectedSeats.length === 0 ? (
                   <span className="text-sm text-on-surface/50 italic">
-                    Chưa chọn ghế
+                    Chưa chọn
                   </span>
                 ) : null}
                 {selectedSeats.map((s) => (
                   <span
-                    key={s.rowName + s.number}
-                    className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-bold border border-primary/20"
+                    key={s.seatId}
+                    className="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold border border-primary/20"
                   >
                     {s.rowName}
                     {s.number}
@@ -247,24 +305,30 @@ export default function SeatSelectionLayout({ timeId }: Props) {
                 ))}
               </div>
             </div>
-            <div className="h-10 w-[1px] bg-white/10 hidden md:block"></div>
-            <div className="flex flex-col">
+            <div className="h-8 w-[1px] bg-white/10 hidden md:block"></div>
+            <div className="flex flex-col text-right md:text-left w-1/2 md:w-auto">
               <span className="text-[10px] text-on-surface-variant uppercase tracking-widest font-bold">
                 Tổng thanh toán
               </span>
-              <span className="text-2xl font-headline font-black text-primary tracking-tight">
+              <span className="text-xl md:text-2xl font-headline font-black text-primary tracking-tight">
                 {totalPrice.toLocaleString("vi-VN")}{" "}
-                <span className="text-xs font-medium">VNĐ</span>
+                <span className="text-[10px] font-medium">VNĐ</span>
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
+          <div className="w-full md:w-auto flex gap-3">
             <button
-              onClick={handleContinue} // GẮN HÀM VÀO ĐÂY
-              disabled={selectedSeats.length === 0}
-              className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary-container text-on-primary px-12 py-4 rounded-full font-label font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+              onClick={() => router.back()}
+              className="flex-1 md:flex-none border border-white/10 px-6 py-3 rounded-full font-label font-bold text-xs uppercase tracking-widest hover:bg-white/5 transition-all"
             >
-              Thanh toán
+              Đổi suất
+            </button>
+            <button
+              onClick={handleContinue}
+              disabled={selectedSeats.length === 0}
+              className="flex-1 md:flex-none bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-3 rounded-full font-label font-extrabold text-xs uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
+            >
+              Tiếp tục
             </button>
           </div>
         </div>
